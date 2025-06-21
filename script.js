@@ -7,46 +7,44 @@ let usuarioAtual = null;
 
 // Função para entrar (login)
 async function entrar() {
-  const nome = document.getElementById('nomeUsuario').value.trim();
+  const email = document.getElementById('emailUsuario').value.trim();
   const senha = document.getElementById('senhaUsuario').value;
 
-  if (!nome || !senha) {
-    alert('Por favor, preencha nome e senha.');
+  if (!email || !senha) {
+    alert("Digite e-mail e senha.");
     return;
   }
 
+  // Verifica usuário no Supabase
   const { data: user, error } = await supabase
     .from('usuarios')
     .select('*')
-    .eq('nome', nome)
+    .eq('email', email)
     .single();
 
-  if (error) {
-    alert('Erro ao buscar usuário: ' + error.message);
+  if (error && error.code === 'PGRST116') {
+    alert("Usuário não encontrado.");
     return;
-  }
-
-  if (!user) {
-    alert('Usuário não encontrado.');
+  } else if (error) {
+    alert("Erro ao buscar usuário: " + error.message);
     return;
   }
 
   if (user.senha !== senha) {
-    alert('Senha incorreta!');
+    alert("Senha incorreta.");
     return;
   }
 
   usuarioAtual = user;
 
-  // Mostrar dashboard e esconder login
+  // login OK
   document.getElementById('login').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('nomeSpan').textContent = usuarioAtual.nome;
+  document.getElementById('nomeSpan').textContent = usuarioAtual.nome || usuarioAtual.email;
 
-  // Inicializa filtros e carrega dados
-  await inicializarFiltroAno();
   await carregarDados();
 }
+
 
 // Função para sair (logout)
 function sair() {
