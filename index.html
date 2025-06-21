@@ -2,42 +2,40 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Controle Financeiro</title>
-
-  <!-- Fonte -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="./style.css?v=1" />
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Seu script, após os outros -->
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <!-- Tela de login -->
   <div id="login">
-  <div class="login-card">
-    <h2>Controle Financeiro</h2>
-    <p>Digite seu e-mail e senha:</p>
-  <input type="email" id="emailUsuario" placeholder="Seu e-mail">
-<input type="password" id="senhaUsuario" placeholder="Sua senha">
-<button onclick="entrar()">Entrar</button>
-
+    <div class="login-card">
+      <h2>Controle Financeiro</h2>
+      <p>Digite seu e-mail e senha:</p>
+      <input type="email" id="emailUsuario" placeholder="Seu e-mail">
+      <input type="password" id="senhaUsuario" placeholder="Sua senha">
+      <button onclick="entrar()">Entrar</button>
+    </div>
   </div>
-</div>
 
-
-  <!-- Dashboard, aparece só depois do login -->
-  <div id="dashboard" style="display:none">
+  <div id="dashboard" style="display: none;">
     <header>
-      <h2 style="margin-bottom: 10px;">
-        Bem-vindo, <span id="nomeSpan"></span>
-        <button onclick="sair()" title="Sair" style="margin-left: 10px; background: transparent; color: #dc3545; font-size: 0.8em;">❌</button>
+      <h2>Bem-vindo, <span id="nomeSpan"></span> 
+        <button onclick="sair()">❌ Sair</button>
       </h2>
-      <hr />
+      <hr>
     </header>
 
+    
     <h2>
       Total de Renda: R$ <span id="rendaTotal"></span>
       <button onclick="adicionarRenda()" style="margin-left: 10px; background: transparent; color: #28a745; font-size: 1.2em;">➕</button>
