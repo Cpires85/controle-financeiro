@@ -1,147 +1,99 @@
-// Supabase - substitua com seus dados reais
+// Configuração Supabase
 const supabaseUrl = 'https://uyfmlcgqbekjtzwnrcui.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5Zm1sY2dxYmVranR6d25yY3VpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MjMxNjcsImV4cCI6MjA2NjA5OTE2N30.N9mP0ccEQ7hfpitMlOUomB38yLAB_-anMHlqXF0L_7k';
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-let usuarioAtual = null; // vai guardar info do usuário logado
+let usuarioAtual = null;
 
-// ----- FUNÇÃO DE LOGIN SIMPLES (com nome e senha, pra depois melhorar)
-
-// Tenta logar o usuário, ou criar se não existir (básico, sem segurança ainda)
-// ----- NOVA FUNÇÃO DE LOGIN COM AUTENTICAÇÃO E APROVAÇÃO
+// Função para entrar (login)
 async function entrar() {
-  const email = document.getElementById('emailUsuario').value.trim();
-  const senha = document.getElementById('senhaUsuario').value.trim();
+  const nome = document.getElementById('nomeUsuario').value.trim();
+  const senha = document.getElementById('senhaUsuario').value;
 
-  if (!email || !senha) {
-    alert("Digite seu e-mail e senha.");
+  if (!nome || !senha) {
+    alert('Por favor, preencha nome e senha.');
     return;
   }
 
-  // Autenticar usando Supabase Auth
-  const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-    email,
-    password: senha
-  });
-
-  if (loginError) {
-    alert("E-mail ou senha inválidos.");
-    return;
-  }
-
-  // Buscar dados extras na tabela usuarios (ver se foi aprovado)
-  const { data: userInfo, error: userError } = await supabase
+  const { data: user, error } = await supabase
     .from('usuarios')
     .select('*')
-    .eq('email', email)
+    .eq('nome', nome)
     .single();
 
-  if (userError || !userInfo) {
-    alert("Erro ao verificar aprovação do usuário.");
+  if (error) {
+    alert('Erro ao buscar usuário: ' + error.message);
     return;
   }
 
-  if (!userInfo.aprovado) {
-    alert("Seu acesso ainda não foi aprovado pelo administrador.");
-    await supabase.auth.signOut();
+  if (!user) {
+    alert('Usuário não encontrado.');
     return;
   }
 
-  usuarioAtual = userInfo;
-
-  // Sucesso no login:
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('nomeSpan').textContent = usuarioAtual.nome || usuarioAtual.email;
-
-  await carregarDados();
-  const mesAtual = new Date().getMonth() + 1;
-  const anoAtual = new Date().getFullYear();
-  await atualizarListaGastos(mesAtual, anoAtual);
-  desenharGrafico();
-}
-
-  if (error && error.code === 'PGRST116') {
-    // usuário não existe, cria
-    const { data: novoUser, error: errInsert } = await supabase
-      .from('usuarios')
-      .insert([{ nome, senha }])
-      .select()
-      .single();
-
-    if (errInsert) {
-      alert('Erro ao criar usuário: ' + errInsert.message);
-      return;
-    }
-    usuarioAtual = novoUser;
-  } else if (error) {
-    alert('Erro: ' + error.message);
+  if (user.senha !== senha) {
+    alert('Senha incorreta!');
     return;
-  } else {
-    // usuário existe, verifica senha
-    if (user.senha !== senha) {
-      alert('Senha incorreta!');
-      return;
-    }
-    usuarioAtual = user;
   }
 
-  // Sucesso no login:
+  usuarioAtual = user;
+
+  // Mostrar dashboard e esconder login
   document.getElementById('login').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   document.getElementById('nomeSpan').textContent = usuarioAtual.nome;
 
+  // Inicializa filtros e carrega dados
+  await inicializarFiltroAno();
   await carregarDados();
 }
 
-// ------ FUNÇÃO LOGOUT
-
+// Função para sair (logout)
 function sair() {
   usuarioAtual = null;
   document.getElementById('login').style.display = 'block';
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('nomeUsuario').value = '';
+  document.getElementById('senhaUsuario').value = '';
 }
 
-// ------ CARREGAR DADOS: metas, renda, gastos
-
+// Carregar dados básicos (metas, renda, gastos)
 async function carregarDados() {
   if (!usuarioAtual) return;
 
-  // metas
-  const { data: metas, error: errMetas } = await supabase
+  // Busca metas do usuário
+  let { data: metas, error: errMetas } = await supabase
     .from('metas')
     .select('*')
     .eq('usuario_id', usuarioAtual.id)
     .single();
 
   if (errMetas) {
-    console.log("Usuário sem metas, criando padrão...");
+    // Se não tem metas, cria padrão
     await supabase.from('metas').insert([{
       usuario_id: usuarioAtual.id,
       fixos: 50,
       gerais: 30,
       lazer: 20
     }]);
+    // Buscar novamente
+    let metasRes = await supabase
+      .from('metas')
+      .select('*')
+      .eq('usuario_id', usuarioAtual.id)
+      .single();
+    metas = metasRes.data;
   }
 
-  // pega metas de novo
-  const { data: metasAtualizadas } = await supabase
-    .from('metas')
-    .select('*')
-    .eq('usuario_id', usuarioAtual.id)
-    .single();
-
-  // atualiza inputs e resumo
-  document.getElementById('fixosPct').value = metasAtualizadas.fixos;
-  document.getElementById('geraisPct').value = metasAtualizadas.gerais;
-  document.getElementById('lazerPct').value = metasAtualizadas.lazer;
-
+  // Atualiza inputs e resumo metas
+  document.getElementById('fixosPct').value = metas.fixos;
+  document.getElementById('geraisPct').value = metas.gerais;
+  document.getElementById('lazerPct').value = metas.lazer;
   document.getElementById('metasResumo').textContent =
-    `Fixos: ${metasAtualizadas.fixos}% | Gerais: ${metasAtualizadas.gerais}% | Lazer: ${metasAtualizadas.lazer}%`;
+    `Fixos: ${metas.fixos}% | Gerais: ${metas.gerais}% | Lazer: ${metas.lazer}%`;
 
-  // renda (pega a renda mais recente)
-  const { data: rendas, error: errRendas } = await supabase
+  // Busca renda atual
+  const { data: rendas } = await supabase
     .from('rendas')
     .select('*')
     .eq('usuario_id', usuarioAtual.id)
@@ -154,19 +106,14 @@ async function carregarDados() {
     document.getElementById('rendaTotal').textContent = "0.00";
   }
 
-  // gastos (carregar lista com filtro inicial: mês/ano atual)
-  const dataAtual = new Date();
-  const mesAtual = dataAtual.getMonth() + 1;
-  const anoAtual = dataAtual.getFullYear();
-
-  await atualizarListaGastos(mesAtual, anoAtual);
-
+  // Atualiza lista gastos e gráfico com mês e ano atual
+  const hoje = new Date();
+  await atualizarListaGastos(hoje.getMonth() + 1, hoje.getFullYear());
   desenharGrafico();
 }
 
-// ------ ATUALIZAR LISTA DE GASTOS
-
-async function atualizarListaGastos(filtroMes = null, filtroAno = null) {
+// Função atualizar lista gastos
+async function atualizarListaGastos(mes = null, ano = null) {
   if (!usuarioAtual) return;
 
   const lista = document.getElementById('listaGastos');
@@ -177,17 +124,13 @@ async function atualizarListaGastos(filtroMes = null, filtroAno = null) {
     .select('*')
     .eq('usuario_id', usuarioAtual.id);
 
-  if (filtroMes) {
-    // Filtra o mês (1 a 12) no campo data
-    const inicio = new Date(filtroAno, filtroMes - 1, 1).toISOString();
-    const fim = new Date(filtroAno, filtroMes, 1).toISOString();
-
+  if (mes && ano) {
+    const inicio = new Date(ano, mes - 1, 1).toISOString();
+    const fim = new Date(ano, mes, 1).toISOString();
     query = query.gte('data', inicio).lt('data', fim);
-  } else if (filtroAno) {
-    // Filtra só ano
-    const inicioAno = new Date(filtroAno, 0, 1).toISOString();
-    const fimAno = new Date(filtroAno + 1, 0, 1).toISOString();
-
+  } else if (ano) {
+    const inicioAno = new Date(ano, 0, 1).toISOString();
+    const fimAno = new Date(ano + 1, 0, 1).toISOString();
     query = query.gte('data', inicioAno).lt('data', fimAno);
   }
 
@@ -202,7 +145,6 @@ async function atualizarListaGastos(filtroMes = null, filtroAno = null) {
 
   gastos.forEach(gasto => {
     const data = new Date(gasto.data);
-
     const li = document.createElement('li');
     li.innerHTML = `
       <strong>${gasto.descricao || 'Sem descrição'}</strong><br>
@@ -217,7 +159,7 @@ async function atualizarListaGastos(filtroMes = null, filtroAno = null) {
     else if (gasto.categoria === 'lazer') totalLazer += parseFloat(gasto.valor);
   });
 
-  // Mostrar resumo abaixo
+  // Mostra resumo gastos
   lista.innerHTML += `
     <hr>
     <p>Total fixos: R$ ${totalFixos.toFixed(2)}</p>
@@ -229,8 +171,7 @@ async function atualizarListaGastos(filtroMes = null, filtroAno = null) {
   desenharGrafico();
 }
 
-// ------ ADICIONAR GASTO
-
+// Adicionar gasto
 async function adicionarGasto() {
   if (!usuarioAtual) return;
 
@@ -259,20 +200,19 @@ async function adicionarGasto() {
     return;
   }
 
-  // Limpa campos
+  // Limpar campos
   document.getElementById('gastoValor').value = '';
   document.getElementById('gastoDescricao').value = '';
   document.getElementById('gastoData').value = '';
 
-  // Atualiza lista e gráfico
-  const mes = document.getElementById('filtroMes').value || null;
-  const ano = document.getElementById('filtroAno').value || null;
+  // Atualizar lista e gráfico com filtros atuais
+  const mes = parseInt(document.getElementById('filtroMes').value) || null;
+  const ano = parseInt(document.getElementById('filtroAno').value) || null;
 
-  await atualizarListaGastos(mes ? parseInt(mes) : null, ano ? parseInt(ano) : null);
+  await atualizarListaGastos(mes, ano);
 }
 
-// ------ REMOVER GASTO
-
+// Remover gasto
 async function removerGasto(id) {
   if (!usuarioAtual) return;
 
@@ -286,30 +226,27 @@ async function removerGasto(id) {
     return;
   }
 
-  // Atualiza lista e gráfico
-  const mes = document.getElementById('filtroMes').value || null;
-  const ano = document.getElementById('filtroAno').value || null;
-
-  await atualizarListaGastos(mes ? parseInt(mes) : null, ano ? parseInt(ano) : null);
+  // Atualizar lista e gráfico
+  const mes = parseInt(document.getElementById('filtroMes').value) || null;
+  const ano = parseInt(document.getElementById('filtroAno').value) || null;
+  await atualizarListaGastos(mes, ano);
 }
 
-// ------ EDITAR GASTO
-
+// Editar gasto (valor)
 async function editarGasto(id) {
   if (!usuarioAtual) return;
 
-  let gastos = await supabase
+  const { data: gasto, error } = await supabase
     .from('gastos')
     .select('*')
     .eq('id', id)
     .single();
 
-  if (!gastos.data) {
+  if (error || !gasto) {
     alert("Gasto não encontrado.");
     return;
   }
 
-  const gasto = gastos.data;
   const novoValorStr = prompt("Novo valor:", gasto.valor);
   if (novoValorStr !== null) {
     const novoValor = parseFloat(novoValorStr);
@@ -323,17 +260,15 @@ async function editarGasto(id) {
         alert("Erro ao atualizar gasto: " + error.message);
         return;
       }
-      // Atualiza lista e gráfico
-      const mes = document.getElementById('filtroMes').value || null;
-      const ano = document.getElementById('filtroAno').value || null;
 
-      await atualizarListaGastos(mes ? parseInt(mes) : null, ano ? parseInt(ano) : null);
+      const mes = parseInt(document.getElementById('filtroMes').value) || null;
+      const ano = parseInt(document.getElementById('filtroAno').value) || null;
+      await atualizarListaGastos(mes, ano);
     }
   }
 }
 
-// ------ ADICIONAR RENDA
-
+// Adicionar renda
 async function adicionarRenda() {
   if (!usuarioAtual) return;
 
@@ -361,8 +296,7 @@ async function adicionarRenda() {
   await atualizarListaGastos();
 }
 
-// ------ SALVAR METAS
-
+// Salvar metas
 async function salvarMetas() {
   if (!usuarioAtual) return;
 
@@ -375,8 +309,7 @@ async function salvarMetas() {
     return;
   }
 
-  // Atualiza as metas (assumindo que já existe)
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('metas')
     .update({ fixos, gerais, lazer })
     .eq('usuario_id', usuarioAtual.id);
@@ -392,8 +325,7 @@ async function salvarMetas() {
   desenharGrafico();
 }
 
-// ------ ATUALIZAR BARRAS DE PROGRESSO DAS METAS
-
+// Atualizar barras de metas
 function atualizarMetas(totalFixos = 0, totalGerais = 0, totalLazer = 0) {
   if (!usuarioAtual) return;
 
@@ -401,136 +333,103 @@ function atualizarMetas(totalFixos = 0, totalGerais = 0, totalLazer = 0) {
   const gerais = parseInt(document.getElementById('geraisPct').value);
   const lazer = parseInt(document.getElementById('lazerPct').value);
 
-  // Busca a renda atual (mostra última)
   const rendaTotal = parseFloat(document.getElementById('rendaTotal').textContent);
 
   function gerarBarra(categoria, gasto, meta) {
-    let percentual = (meta === 0) ? 0 : Math.min((gasto / meta) * 100, 100);
+    let percentual = meta === 0 ? 0 : Math.min((gasto / meta) * 100, 100);
     let cor = '#28a745'; // verde
     if (percentual > 90) cor = '#dc3545'; // vermelho
     else if (percentual > 70) cor = '#ffc107'; // amarelo
 
     return `
-      <p>${categoria}: R$ ${gasto.toFixed(2)} / R$ ${meta.toFixed(2)}</p>
-      <div class="barra-externa">
-        <div class="barra-interna" style="width: ${percentual}%; background-color: ${cor};">
-          ${percentual.toFixed(0)}%
-        </div>
+      <p>${categoria}: R$ ${gasto.toFixed(2)} / Meta R$ ${(rendaTotal * meta / 100).toFixed(2)}</p>
+      <div style="background:#eee; width: 100%; height: 15px; border-radius: 5px;">
+        <div style="width: ${percentual}%; background: ${cor}; height: 15px; border-radius: 5px;"></div>
       </div>
     `;
   }
 
-  const fixosMeta = (rendaTotal * fixos) / 100;
-  const geraisMeta = (rendaTotal * gerais) / 100;
-  const lazerMeta = (rendaTotal * lazer) / 100;
-
-  const html = `
-    ${gerarBarra('Fixos', totalFixos, fixosMeta)}
-    ${gerarBarra('Gerais', totalGerais, geraisMeta)}
-    ${gerarBarra('Lazer', totalLazer, lazerMeta)}
-  `;
-
-  document.getElementById('metasDisplay').innerHTML = html;
+  document.getElementById('metasDisplay').innerHTML =
+    gerarBarra('Fixos', totalFixos, fixos) +
+    gerarBarra('Gerais', totalGerais, gerais) +
+    gerarBarra('Lazer', totalLazer, lazer);
 }
 
-// ------ DESENHAR GRÁFICO (usando Chart.js)
+// Editar metas - mostrar inputs e botão confirmar
+function editarMetas() {
+  const linha = document.getElementById('metasLinha');
+  linha.style.display = linha.style.display === 'flex' ? 'none' : 'flex';
+}
 
-let chartInstance = null;
+// Filtro ano - preenche options com últimos anos
+async function inicializarFiltroAno() {
+  const selectAno = document.getElementById('filtroAno');
+  const anoAtual = new Date().getFullYear();
 
-function desenharGrafico() {
+  selectAno.innerHTML = '<option value="">Todos</option>';
+  for (let ano = anoAtual; ano >= anoAtual - 10; ano--) {
+    const opt = document.createElement('option');
+    opt.value = ano;
+    opt.textContent = ano;
+    selectAno.appendChild(opt);
+  }
+}
+
+// Filtrar lista por mês e ano selecionados
+async function filtrarPorData() {
+  const mes = parseInt(document.getElementById('filtroMes').value) || null;
+  const ano = parseInt(document.getElementById('filtroAno').value) || null;
+  await atualizarListaGastos(mes, ano);
+}
+
+// Desenhar gráfico com Chart.js
+let grafico = null;
+async function desenharGrafico() {
   if (!usuarioAtual) return;
 
-  const fixos = parseFloat(document.getElementById('fixosPct').value) || 0;
-  const gerais = parseFloat(document.getElementById('geraisPct').value) || 0;
-  const lazer = parseFloat(document.getElementById('lazerPct').value) || 0;
+  // Busca gastos atuais no filtro
+  const mes = parseInt(document.getElementById('filtroMes').value) || (new Date().getMonth() + 1);
+  const ano = parseInt(document.getElementById('filtroAno').value) || (new Date().getFullYear());
 
-  const rendaTotal = parseFloat(document.getElementById('rendaTotal').textContent) || 0;
+  const { data: gastos, error } = await supabase
+    .from('gastos')
+    .select('*')
+    .eq('usuario_id', usuarioAtual.id)
+    .gte('data', new Date(ano, mes - 1, 1).toISOString())
+    .lt('data', new Date(ano, mes, 1).toISOString());
 
-  const fixosMeta = (rendaTotal * fixos) / 100;
-  const geraisMeta = (rendaTotal * gerais) / 100;
-  const lazerMeta = (rendaTotal * lazer) / 100;
-
-  // Pega os gastos atuais do resumo na tela
-  const fixosGastos = document.querySelector('#metasDisplay p:nth-child(1)');
-  const geraisGastos = document.querySelector('#metasDisplay p:nth-child(2)');
-  const lazerGastos = document.querySelector('#metasDisplay p:nth-child(3)');
-
-  let gastosFixos = 0, gastosGerais = 0, gastosLazer = 0;
-
-  if (fixosGastos) gastosFixos = parseFloat(fixosGastos.textContent.match(/R\$ ([\d\.]+)/)[1].replace('.', '').replace(',', '.'));
-  if (geraisGastos) gastosGerais = parseFloat(geraisGastos.textContent.match(/R\$ ([\d\.]+)/)[1].replace('.', '').replace(',', '.'));
-  if (lazerGastos) gastosLazer = parseFloat(lazerGastos.textContent.match(/R\$ ([\d\.]+)/)[1].replace('.', '').replace(',', '.'));
-
-  // Atualiza gráfico com dados reais
-  const ctx = document.getElementById('graficoGastos').getContext('2d');
-
-  if (chartInstance) {
-    chartInstance.destroy();
+  if (error) {
+    alert('Erro ao buscar gastos para gráfico: ' + error.message);
+    return;
   }
 
-  chartInstance = new Chart(ctx, {
+  // Soma por categoria
+  const soma = { fixos: 0, gerais: 0, lazer: 0 };
+  gastos.forEach(g => {
+    soma[g.categoria] += parseFloat(g.valor);
+  });
+
+  const ctx = document.getElementById('graficoGastos').getContext('2d');
+
+  if (grafico) {
+    grafico.destroy();
+  }
+
+  grafico = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: ['Fixos', 'Gerais', 'Lazer'],
       datasets: [{
-        label: 'Gastos por Categoria',
-        data: [gastosFixos, gastosGerais, gastosLazer],
-        backgroundColor: [
-          '#007bff',
-          '#ffc107',
-          '#28a745'
-        ],
-        borderWidth: 1
+        label: 'Gastos por categoria',
+        data: [soma.fixos, soma.gerais, soma.lazer],
+        backgroundColor: ['#007bff', '#ffc107', '#28a745']
       }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
     }
   });
 }
-
-// ------ FILTRAR POR DATA
-
-document.getElementById('filtroMes').addEventListener('change', async () => {
-  const mes = parseInt(document.getElementById('filtroMes').value) || null;
-  const ano = parseInt(document.getElementById('filtroAno').value) || null;
-  await atualizarListaGastos(mes, ano);
-});
-
-document.getElementById('filtroAno').addEventListener('change', async () => {
-  const mes = parseInt(document.getElementById('filtroMes').value) || null;
-  const ano = parseInt(document.getElementById('filtroAno').value) || null;
-  await atualizarListaGastos(mes, ano);
-});
-
-// ------ INICIALIZAR FILTRO DE ANOS DINAMICAMENTE
-
-async function inicializarFiltroAno() {
-  if (!usuarioAtual) return;
-  const selectAno = document.getElementById('filtroAno');
-  selectAno.innerHTML = '';
-
-  // Pega anos distintos dos gastos do usuário
-  const { data: anos, error } = await supabase
-    .from('gastos')
-    .select("EXTRACT(year FROM data) as ano")
-    .eq('usuario_id', usuarioAtual.id)
-    .order('ano', { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  // Criar lista única de anos
-  const anosUnicos = [...new Set(anos.map(a => Math.floor(a.ano)))];
-
-  anosUnicos.forEach(ano => {
-    const option = document.createElement('option');
-    option.value = ano;
-    option.textContent = ano;
-    selectAno.appendChild(option);
-  });
-
-  // Seleciona ano atual por padrão
-  const anoAtual = new Date().getFullYear();
-  selectAno.value = anoAtual;
-}
-
