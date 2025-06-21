@@ -1,0 +1,174 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f2f6fc;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+#dashboard, #login {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  max-width: 800px;
+  margin: 30px auto;
+}
+
+h2, h3 {
+  color: #2b3a4e;
+}
+
+input, select, button {
+  margin: 6px 4px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccd6dd;
+  font-size: 1rem;
+}
+
+button {
+  background: #4da6ff;
+  color: white;
+  border: none;
+  font-weight: 600;
+  transition: background 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+}
+
+button:hover {
+  background: #3385ff;
+}
+
+ul#listaGastos {
+  list-style: none;
+  padding: 0;
+}
+
+ul#listaGastos li {
+  background: #f0f4fa;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 1px solid #dde4ee;
+}
+
+#metasResumo {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 10px;
+}
+
+#metasLinha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+#graficoGastos {
+  margin: 20px auto;
+  max-width: 100%;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+#metasDisplay {
+  margin-top: 10px;
+}
+
+.progresso-container {
+  background: #e6eaf0;
+  border-radius: 10px;
+  height: 20px;
+  width: 100%;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progresso-barra {
+  height: 100%;
+  width: 0%;
+  text-align: center;
+  line-height: 20px;
+  color: white;
+  font-weight: bold;
+  transition: width 0.5s ease;
+  background-color: #28a745;
+}
+
+#login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #dbe9ff, #f7f9ff);
+}
+
+.login-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+  animation: aparecer 0.5s ease-out;
+}
+
+.login-card h2 {
+  margin-bottom: 10px;
+  color: #007bff;
+}
+
+.login-card p {
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.login-card button {
+  width: 100%;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.login-card button:hover {
+  background: #0056b3;
+}
+
+@keyframes aparecer {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}

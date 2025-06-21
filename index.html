@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle Financeiro</title>
+
+  <!-- Fonte -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./style.css?v=1" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Tela de login -->
+  <div id="login">
+  <div class="login-card">
+    <h2>Controle Financeiro</h2>
+    <p>Digite seu e-mail e senha:</p>
+    <input type="email" id="emailUsuario" placeholder="Seu e-mail">
+    <input type="password" id="senhaUsuario" placeholder="Sua senha">
+    <button onclick="entrar()">Entrar</button>
+  </div>
+</div>
+
+
+  <!-- Dashboard, aparece só depois do login -->
+  <div id="dashboard" style="display:none">
+    <header>
+      <h2 style="margin-bottom: 10px;">
+        Bem-vindo, <span id="nomeSpan"></span>
+        <button onclick="sair()" title="Sair" style="margin-left: 10px; background: transparent; color: #dc3545; font-size: 0.8em;">❌</button>
+      </h2>
+      <hr />
+    </header>
+
+    <h2>
+      Total de Renda: R$ <span id="rendaTotal"></span>
+      <button onclick="adicionarRenda()" style="margin-left: 10px; background: transparent; color: #28a745; font-size: 1.2em;">➕</button>
+    </h2>
+
+    <h3>Gráfico de Gastos</h3>
+    <canvas id="graficoGastos" width="400" height="200"></canvas>
+
+    <div id="metasResumo" style="margin: 10px 0; font-weight: 600;"></div>
+
+    <div id="metasLinha" style="display: none; gap: 10px; justify-content: center; margin-bottom: 10px;">
+      <label>Fixos % <input type="number" id="fixosPct" min="0" max="100" /></label>
+      <label>Gerais % <input type="number" id="geraisPct" min="0" max="100" /></label>
+      <label>Lazer % <input type="number" id="lazerPct" min="0" max="100" /></label>
+      <button onclick="salvarMetas()">Confirmar</button>
+    </div>
+
+    <button id="editarMetasBtn" onclick="editarMetas()">Editar Metas</button>
+
+    <div id="metasDisplay" style="margin-top: 20px;"></div>
+
+    <hr />
+
+    <h3>Adicionar Gasto</h3>
+    <input type="number" id="gastoValor" placeholder="Valor" />
+    <input type="text" id="gastoDescricao" placeholder="Descrição" />
+    <select id="gastoCategoria">
+      <option value="fixos">Fixos</option>
+      <option value="gerais">Gerais</option>
+      <option value="lazer">Lazer</option>
+    </select>
+    <input type="date" id="gastoData" />
+    <button onclick="adicionarGasto()">Adicionar</button>
+
+    <hr />
+
+    <h3>Filtrar por Mês/Ano</h3>
+    <select id="filtroMes" onchange="filtrarPorData()">
+      <option value="">Todos</option>
+      <option value="1">Janeiro</option>
+      <option value="2">Fevereiro</option>
+      <option value="3">Março</option>
+      <option value="4">Abril</option>
+      <option value="5">Maio</option>
+      <option value="6">Junho</option>
+      <option value="7">Julho</option>
+      <option value="8">Agosto</option>
+      <option value="9">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
+
+    <select id="filtroAno" onchange="filtrarPorData()">
+      <!-- anos adicionados dinamicamente pelo script -->
+    </select>
+
+    <h3>Lista de Gastos</h3>
+    <ul id="listaGastos"></ul>
+
+  </div>
+
+  <!-- JS principal -->
+  <script src="script.js"></script>
+</body>
+</html>
