@@ -1,7 +1,9 @@
+// ✅ Primeiro: crie o cliente Supabase
 const supabaseUrl = 'https://uyfmlcgqbekjtzwnrcui.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // truncado para segurança
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5Zm1sY2dxYmVranR6d25yY3VpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MjMxNjcsImV4cCI6MjA2NjA5OTE2N30.N9mP0ccEQ7hfpitMlOUomB38yLAB_-anMHlqXF0L_7k'; // chave truncada por segurança
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+// Só depois comece a usar o supabase:
 let usuarioAtual = null;
 
 async function entrar() {
@@ -29,7 +31,6 @@ async function entrar() {
   document.getElementById('login').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   document.getElementById('nomeSpan').textContent = usuarioAtual.nome;
-  // Aqui você pode chamar carregarDados() se tiver
 }
 
 function sair() {
